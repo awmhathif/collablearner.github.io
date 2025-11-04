@@ -1,0 +1,2052 @@
+<!DOCTYPE html><html lang="en"><head><meta name="x-poe-datastore-behavior" content="local_only"><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Workspace</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4A90E2;
+            --success: #27AE60;
+            --warning: #F39C12;
+            --danger: #E74C3C;
+            --bot: #9B59B6;
+            --bg: #f5f7fa;
+            --text: #2c3e50;
+            --border: #e1e8ed;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Landing Page */
+        .landing {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .landing-content {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .landing h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .landing p {
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .btn-primary:hover {
+            background: #3a7bc8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        input {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .room-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .room-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .room-name:hover {
+            background: #f0f0f0;
+        }
+
+        .guest-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .guest-badge:hover {
+            transform: scale(1.05);
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .icon-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg);
+        }
+
+        .icon-btn.active {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        /* Main Layout */
+        .workspace {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        /* Canvas */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-image: radial-gradient(circle, #ddd 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .canvas {
+            position: absolute;
+            width: 5000px;
+            height: 5000px;
+            cursor: grab;
+        }
+
+        .canvas.grabbing {
+            cursor: grabbing;
+        }
+
+        /* Notes */
+        .note {
+            position: absolute;
+            min-width: 180px;
+            min-height: 120px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: move;
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow 0.3s;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .note:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .note.selected {
+            box-shadow: 0 0 0 3px var(--primary);
+        }
+
+        .note-header {
+            padding: 0.5rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
+
+        .note-title {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-weight: 600;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .note-action-btn {
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        .note-action-btn:hover {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .note-body {
+            flex: 1;
+            padding: 0.5rem;
+        }
+
+        .note-text {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            resize: none;
+            font-size: 0.85rem;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .note-resize {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 15px;
+            height: 15px;
+            cursor: nwse-resize;
+            background: linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.2) 50%);
+        }
+
+        .color-picker {
+            position: absolute;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: var(--text);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 350px;
+            background: white;
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-tab {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .sidebar-tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        /* Chat */
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .message-time {
+            color: #999;
+            font-size: 0.75rem;
+        }
+
+        .message-text {
+            padding: 0.75rem;
+            background: var(--bg);
+            border-radius: 8px;
+            word-wrap: break-word;
+        }
+
+        .message.system .message-text {
+            background: transparent;
+            color: #999;
+            font-style: italic;
+            padding: 0.5rem 0;
+        }
+
+        .message.bot .message-sender {
+            background: var(--bot);
+            color: white;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .chat-input button {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* Files */
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 1rem;
+        }
+
+        .file-item {
+            position: relative;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .file-thumbnail {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .file-info {
+            padding: 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .file-name {
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-size {
+            color: #999;
+            font-size: 0.7rem;
+        }
+
+        /* Floating Toolbar */
+        .floating-toolbar {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .toolbar-btn {
+            width: 48px;
+            height: 48px;
+            border: none;
+            background: var(--bg);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .toolbar-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-footer {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        /* Voice Call */
+        .voice-bar {
+            background: var(--success);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .mic-level {
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+            height: 20px;
+        }
+
+        .mic-bar {
+            width: 3px;
+            background: rgba(255,255,255,0.3);
+            transition: height 0.1s;
+        }
+
+        .mic-bar.active {
+            background: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                right: -350px;
+                top: 60px;
+                height: calc(100vh - 60px);
+                transition: right 0.3s;
+                z-index: 100;
+            }
+
+            .sidebar.open {
+                right: 0;
+            }
+
+            .floating-toolbar {
+                flex-direction: column;
+                bottom: 1rem;
+                right: 1rem;
+                left: auto;
+                transform: none;
+            }
+
+            .top-actions {
+                flex-wrap: wrap;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s;
+            z-index: 2000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        .canvas-object {
+            position: absolute;
+            cursor: move;
+            border: 2px solid transparent;
+        }
+
+        .canvas-object:hover {
+            border-color: var(--primary);
+        }
+
+        .canvas-object img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .drawing-canvas {
+            position: absolute;
+            background: white;
+            border: 2px solid var(--text);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .online-indicator {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+<script src="https://puc.poecdn.net/authenticated_preview_page/syncedState.3f7572448765332f3047.js"></script></head>
+<body>
+    <!-- Landing Page -->
+    <div id="landingPage" class="landing">
+        <div class="landing-content">
+            <h1>🚀 Collaborative Workspace</h1>
+            <p>Create rooms, share notes, collaborate in real-time. No login required!</p>
+            <button class="btn btn-primary" onclick="createRoom()">Create New Room</button>
+            <div class="input-group">
+                <input type="text" id="joinRoomInput" placeholder="Enter room code (e.g., ABC123)">
+                <button class="btn btn-primary" onclick="joinRoom()">Join</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workspace -->
+    <div id="workspace" class="hidden">
+        <!-- Voice Call Bar -->
+        <div id="voiceBar" class="voice-bar hidden">
+            <div><span class="online-indicator"></span>Voice Call Active</div>
+            <div id="guestName" style="flex: 1;"></div>
+            <div class="mic-level" id="micLevel">
+                <div class="mic-bar"></div>
+                <div class="mic-bar"></div>
+                <div class="mic-bar"></div>
+                <div class="mic-bar"></div>
+                <div class="mic-bar"></div>
+                <div class="mic-bar"></div>
+                <div class="mic-bar"></div>
+                <div class="mic-bar"></div>
+            </div>
+            <button class="icon-btn" id="muteBtn" onclick="toggleMute()">🎤 Mute</button>
+            <button class="icon-btn" onclick="leaveCall()">📞 Leave</button>
+        </div>
+
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="room-info">
+                <span class="room-name" id="roomName" onclick="editRoomName()">Room</span>
+                <span id="guestCount">1 guest</span>
+            </div>
+            <div class="top-actions">
+                <div class="guest-badge" id="guestBadge" onclick="editGuestName()"></div>
+                <button class="icon-btn" onclick="shareRoom()">🔗 Share</button>
+                <button class="icon-btn" onclick="exportRoom()">💾 Export</button>
+                <button class="icon-btn" onclick="importRoom()">📥 Import</button>
+                <button class="icon-btn" id="joinCallBtn" onclick="joinCall()">📞 Join Call</button>
+                <button class="icon-btn" onclick="toggleSidebar()">☰</button>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="workspace">
+            <!-- Canvas -->
+            <div class="canvas-container" id="canvasContainer">
+                <div class="canvas" id="canvas"></div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar" id="sidebar">
+                <div class="sidebar-tabs">
+                    <button class="sidebar-tab active" onclick="switchTab('chat')">💬 Chat</button>
+                    <button class="sidebar-tab" onclick="switchTab('files')">📁 Files</button>
+                </div>
+                <div class="sidebar-content">
+                    <!-- Chat Tab -->
+                    <div id="chatTab">
+                        <div class="chat-messages" id="chatMessages"></div>
+                        <div class="chat-input">
+                            <input type="text" id="chatInput" placeholder="Type a message or /command...">
+                            <button onclick="sendMessage()">Send</button>
+                        </div>
+                    </div>
+
+                    <!-- Files Tab -->
+                    <div id="filesTab" class="hidden">
+                        <div class="files-grid" id="filesGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Toolbar -->
+        <div class="floating-toolbar">
+            <button class="toolbar-btn" onclick="createNote()" title="New Note">📝</button>
+            <button class="toolbar-btn" onclick="uploadFile()" title="Upload File">📁</button>
+            <button class="toolbar-btn" onclick="createDrawing()" title="New Drawing">🎨</button>
+            <button class="toolbar-btn" onclick="clearSelection()" title="Clear Selection">✖️</button>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" style="display: none;" multiple="" onchange="handleFileUpload(event)">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+    <script>
+        // Global State
+        const state = {
+            guestId: null,
+            guestName: null,
+            guestColor: null,
+            roomId: null,
+            roomName: '',
+            notes: {},
+            files: {},
+            canvasObjects: {},
+            messages: [],
+            selectedNotes: new Set(),
+            inCall: false,
+            muted: false,
+            canvas: { x: 0, y: 0, scale: 1 },
+            isDragging: false,
+            dragStart: null
+        };
+
+        const NOTE_COLORS = [
+            '#FFF3C4', '#FFD4E0', '#D4E7FF', '#D4FFD4',
+            '#E8D4FF', '#FFE4C4', '#FFFFFF', '#F0F0F0'
+        ];
+
+        const GUEST_COLORS = [
+            '#4A90E2', '#E74C3C', '#27AE60', '#F39C12',
+            '#9B59B6', '#1ABC9C', '#E67E22', '#3498DB'
+        ];
+
+        // Initialize
+        function init() {
+            initGuest();
+            const hash = window.location.hash;
+            
+            if (hash.startsWith('#r=')) {
+                loadFromShareLink(hash.substring(3));
+            } else if (hash.startsWith('#room=')) {
+                loadRoom(hash.substring(6));
+            } else {
+                document.getElementById('landingPage').classList.remove('hidden');
+            }
+
+            // Broadcast channel for multi-tab sync
+            if (typeof BroadcastChannel !== 'undefined') {
+                const bc = new BroadcastChannel('workspace_sync');
+                bc.onmessage = (event) => {
+                    if (event.data.roomId === state.roomId && event.data.guestId !== state.guestId) {
+                        handleRemoteUpdate(event.data);
+                    }
+                };
+                state.broadcastChannel = bc;
+            }
+
+            // Auto-save
+            setInterval(saveRoom, 1000);
+        }
+
+        function initGuest() {
+            let guestId = localStorage.getItem('guest_id');
+            if (!guestId) {
+                guestId = `Guest-${Math.floor(1000 + Math.random() * 9000)}`;
+                localStorage.setItem('guest_id', guestId);
+            }
+            state.guestId = guestId;
+            state.guestName = guestId;
+            state.guestColor = GUEST_COLORS[Math.floor(Math.random() * GUEST_COLORS.length)];
+            updateGuestBadge();
+        }
+
+        function updateGuestBadge() {
+            const badge = document.getElementById('guestBadge');
+            badge.textContent = state.guestName;
+            badge.style.background = state.guestColor;
+            badge.style.color = 'white';
+        }
+
+        function editGuestName() {
+            const newName = prompt('Enter your name:', state.guestName);
+            if (newName && newName.trim()) {
+                state.guestName = newName.trim();
+                updateGuestBadge();
+                broadcast({ type: 'guestUpdate', guest: { id: state.guestId, name: state.guestName, color: state.guestColor } });
+            }
+        }
+
+        function editRoomName() {
+            const newName = prompt('Enter room name:', state.roomName);
+            if (newName && newName.trim()) {
+                state.roomName = newName.trim();
+                document.getElementById('roomName').textContent = state.roomName;
+                saveRoom();
+                broadcast({ type: 'roomUpdate', roomName: state.roomName });
+            }
+        }
+
+        function createRoom() {
+            const roomId = generateRoomId();
+            const roomName = prompt('Enter room name:', 'New Room') || 'New Room';
+            
+            state.roomId = roomId;
+            state.roomName = roomName;
+            
+            document.getElementById('landingPage').classList.add('hidden');
+            document.getElementById('workspace').classList.remove('hidden');
+            document.getElementById('roomName').textContent = roomName;
+            
+            window.location.hash = `room=${roomId}`;
+            
+            addSystemMessage(`Room created! Share this link: ${window.location.href}`);
+            setupCanvas();
+            saveRoom();
+        }
+
+        function joinRoom() {
+            const code = document.getElementById('joinRoomInput').value.trim().toUpperCase();
+            if (!code) return;
+            
+            const savedRoom = localStorage.getItem(`room_${code}`);
+            if (savedRoom) {
+                loadRoom(code);
+            } else {
+                alert('Room not found. Creating new room with this code.');
+                state.roomId = code;
+                state.roomName = `Room ${code}`;
+                document.getElementById('landingPage').classList.add('hidden');
+                document.getElementById('workspace').classList.remove('hidden');
+                document.getElementById('roomName').textContent = state.roomName;
+                window.location.hash = `room=${code}`;
+                setupCanvas();
+                saveRoom();
+            }
+        }
+
+        function loadRoom(roomId) {
+            const savedRoom = localStorage.getItem(`room_${roomId}`);
+            if (savedRoom) {
+                const roomData = JSON.parse(savedRoom);
+                Object.assign(state, roomData);
+                
+                document.getElementById('landingPage').classList.add('hidden');
+                document.getElementById('workspace').classList.remove('hidden');
+                document.getElementById('roomName').textContent = state.roomName;
+                
+                setupCanvas();
+                renderAll();
+                
+                addSystemMessage(`${state.guestName} joined the room`);
+                broadcast({ type: 'join', guest: { id: state.guestId, name: state.guestName, color: state.guestColor } });
+            } else {
+                alert('Room not found');
+            }
+        }
+
+        function generateRoomId() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let id = '';
+            for (let i = 0; i < 6; i++) {
+                id += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return id;
+        }
+
+        function setupCanvas() {
+            const container = document.getElementById('canvasContainer');
+            const canvas = document.getElementById('canvas');
+            
+            // Center canvas
+            canvas.style.left = '0px';
+            canvas.style.top = '0px';
+            
+            // Pan & zoom
+            let isPanning = false;
+            let startX, startY;
+            
+            container.addEventListener('mousedown', (e) => {
+                if (e.target === container || e.target === canvas) {
+                    isPanning = true;
+                    startX = e.clientX - state.canvas.x;
+                    startY = e.clientY - state.canvas.y;
+                    canvas.classList.add('grabbing');
+                }
+            });
+            
+            container.addEventListener('mousemove', (e) => {
+                if (isPanning) {
+                    state.canvas.x = e.clientX - startX;
+                    state.canvas.y = e.clientY - startY;
+                    updateCanvasTransform();
+                }
+            });
+            
+            container.addEventListener('mouseup', () => {
+                isPanning = false;
+                canvas.classList.remove('grabbing');
+            });
+            
+            container.addEventListener('wheel', (e) => {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                    state.canvas.scale = Math.max(0.75, Math.min(2, state.canvas.scale * delta));
+                    updateCanvasTransform();
+                }
+            });
+            
+            // Double click to create note
+            canvas.addEventListener('dblclick', (e) => {
+                if (e.target === canvas) {
+                    const rect = canvas.getBoundingClientRect();
+                    createNote(e.clientX - rect.left, e.clientY - rect.top);
+                }
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                
+                if (e.key === 'n' || e.key === 'N') {
+                    createNote();
+                } else if (e.key === 'Delete') {
+                    deleteSelected();
+                }
+            });
+            
+            // Chat input
+            document.getElementById('chatInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+
+        function updateCanvasTransform() {
+            const canvas = document.getElementById('canvas');
+            canvas.style.transform = `translate(${state.canvas.x}px, ${state.canvas.y}px) scale(${state.canvas.scale})`;
+        }
+
+        function createNote(x, y) {
+            const noteId = `n_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const container = document.getElementById('canvasContainer');
+            const rect = container.getBoundingClientRect();
+            
+            const note = {
+                id: noteId,
+                type: 'note',
+                position: { 
+                    x: x || (rect.width / 2 - state.canvas.x) / state.canvas.scale, 
+                    y: y || (rect.height / 2 - state.canvas.y) / state.canvas.scale 
+                },
+                size: { width: 220, height: 180 },
+                zIndex: Object.keys(state.notes).length,
+                color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
+                content: { title: '', text: '' },
+                meta: {
+                    createdBy: state.guestId,
+                    createdAt: Date.now()
+                }
+            };
+            
+            state.notes[noteId] = note;
+            renderNote(note);
+            saveRoom();
+            broadcast({ type: 'noteCreate', note });
+        }
+
+        function renderNote(note) {
+            const canvas = document.getElementById('canvas');
+            
+            const noteEl = document.createElement('div');
+            noteEl.className = 'note';
+            noteEl.id = note.id;
+            noteEl.style.left = note.position.x + 'px';
+            noteEl.style.top = note.position.y + 'px';
+            noteEl.style.width = note.size.width + 'px';
+            noteEl.style.height = note.size.height + 'px';
+            noteEl.style.backgroundColor = note.color;
+            noteEl.style.zIndex = note.zIndex;
+            
+            noteEl.innerHTML = `
+                <div class="note-header">
+                    <input type="text" class="note-title" placeholder="Title..." value="${note.content.title || ''}" maxlength="100">
+                    <div class="note-actions">
+                        <button class="note-action-btn" onclick="showColorPicker('${note.id}', event)">🎨</button>
+                        <button class="note-action-btn" onclick="deleteNote('${note.id}')">🗑️</button>
+                    </div>
+                </div>
+                <div class="note-body">
+                    <textarea class="note-text" placeholder="Start typing...">${note.content.text || ''}</textarea>
+                </div>
+                <div class="note-resize"></div>
+            `;
+            
+            canvas.appendChild(noteEl);
+            
+            // Title editing
+            const titleInput = noteEl.querySelector('.note-title');
+            titleInput.addEventListener('blur', () => {
+                note.content.title = titleInput.value;
+                saveRoom();
+                broadcast({ type: 'noteUpdate', note });
+            });
+            
+            // Text editing
+            const textArea = noteEl.querySelector('.note-text');
+            textArea.addEventListener('input', () => {
+                note.content.text = textArea.value;
+            });
+            textArea.addEventListener('blur', () => {
+                saveRoom();
+                broadcast({ type: 'noteUpdate', note });
+            });
+            
+            // Dragging
+            makeDraggable(noteEl, note);
+            
+            // Resizing
+            makeResizable(noteEl, note);
+            
+            // Selection
+            noteEl.addEventListener('click', (e) => {
+                if (e.shiftKey) {
+                    toggleSelection(note.id);
+                } else if (!e.target.classList.contains('note-title') && 
+                          !e.target.classList.contains('note-text') &&
+                          !e.target.classList.contains('note-action-btn')) {
+                    clearSelection();
+                    state.selectedNotes.add(note.id);
+                    noteEl.classList.add('selected');
+                }
+            });
+        }
+
+        function makeDraggable(element, note) {
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+            
+            const header = element.querySelector('.note-header');
+            
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('note-title') || 
+                    e.target.classList.contains('note-action-btn')) return;
+                
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialX = note.position.x;
+                initialY = note.position.y;
+                
+                element.style.zIndex = 1000;
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const dx = (e.clientX - startX) / state.canvas.scale;
+                const dy = (e.clientY - startY) / state.canvas.scale;
+                
+                note.position.x = initialX + dx;
+                note.position.y = initialY + dy;
+                
+                element.style.left = note.position.x + 'px';
+                element.style.top = note.position.y + 'px';
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    element.style.zIndex = note.zIndex;
+                    saveRoom();
+                    broadcast({ type: 'noteUpdate', note });
+                }
+            });
+        }
+
+        function makeResizable(element, note) {
+            const handle = element.querySelector('.note-resize');
+            let isResizing = false;
+            let startX, startY, startWidth, startHeight;
+            
+            handle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                isResizing = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                startWidth = note.size.width;
+                startHeight = note.size.height;
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                
+                const dx = (e.clientX - startX) / state.canvas.scale;
+                const dy = (e.clientY - startY) / state.canvas.scale;
+                
+                note.size.width = Math.max(180, startWidth + dx);
+                note.size.height = Math.max(120, startHeight + dy);
+                
+                element.style.width = note.size.width + 'px';
+                element.style.height = note.size.height + 'px';
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    saveRoom();
+                    broadcast({ type: 'noteUpdate', note });
+                }
+            });
+        }
+
+        function showColorPicker(noteId, event) {
+            event.stopPropagation();
+            
+            // Remove existing picker
+            const existing = document.querySelector('.color-picker');
+            if (existing) existing.remove();
+            
+            const picker = document.createElement('div');
+            picker.className = 'color-picker';
+            
+            NOTE_COLORS.forEach(color => {
+                const option = document.createElement('div');
+                option.className = 'color-option';
+                option.style.backgroundColor = color;
+                if (color === state.notes[noteId].color) {
+                    option.classList.add('selected');
+                }
+                option.onclick = () => {
+                    changeNoteColor(noteId, color);
+                    picker.remove();
+                };
+                picker.appendChild(option);
+            });
+            
+            const rect = event.target.getBoundingClientRect();
+            picker.style.position = 'fixed';
+            picker.style.left = rect.left + 'px';
+            picker.style.top = rect.bottom + 5 + 'px';
+            
+            document.body.appendChild(picker);
+            
+            // Close on outside click
+            setTimeout(() => {
+                document.addEventListener('click', function closePickerr() {
+                    picker.remove();
+                    document.removeEventListener('click', closePicker);
+                });
+            }, 100);
+        }
+
+        function changeNoteColor(noteId, color) {
+            const note = state.notes[noteId];
+            if (!note) return;
+            
+            note.color = color;
+            const noteEl = document.getElementById(noteId);
+            if (noteEl) {
+                noteEl.style.backgroundColor = color;
+            }
+            
+            saveRoom();
+            broadcast({ type: 'noteUpdate', note });
+        }
+
+        function deleteNote(noteId) {
+            if (!confirm('Delete this note?')) return;
+            
+            const noteEl = document.getElementById(noteId);
+            if (noteEl) noteEl.remove();
+            
+            delete state.notes[noteId];
+            state.selectedNotes.delete(noteId);
+            
+            saveRoom();
+            broadcast({ type: 'noteDelete', noteId });
+        }
+
+        function toggleSelection(noteId) {
+            const noteEl = document.getElementById(noteId);
+            if (state.selectedNotes.has(noteId)) {
+                state.selectedNotes.delete(noteId);
+                noteEl.classList.remove('selected');
+            } else {
+                state.selectedNotes.add(noteId);
+                noteEl.classList.add('selected');
+            }
+        }
+
+        function clearSelection() {
+            state.selectedNotes.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('selected');
+            });
+            state.selectedNotes.clear();
+        }
+
+        function deleteSelected() {
+            if (state.selectedNotes.size === 0) return;
+            if (!confirm(`Delete ${state.selectedNotes.size} selected note(s)?`)) return;
+            
+            state.selectedNotes.forEach(id => {
+                const noteEl = document.getElementById(id);
+                if (noteEl) noteEl.remove();
+                delete state.notes[id];
+            });
+            
+            state.selectedNotes.clear();
+            saveRoom();
+            broadcast({ type: 'bulkDelete', noteIds: Array.from(state.selectedNotes) });
+        }
+
+        // Chat functions
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            input.value = '';
+            
+            // Check for bot commands
+            if (text.startsWith('/')) {
+                handleBotCommand(text);
+                return;
+            }
+            
+            const message = {
+                id: `m_${Date.now()}`,
+                from: state.guestName,
+                fromColor: state.guestColor,
+                fromId: state.guestId,
+                text,
+                timestamp: Date.now(),
+                type: 'user'
+            };
+            
+            state.messages.push(message);
+            renderMessage(message);
+            saveRoom();
+            broadcast({ type: 'message', message });
+        }
+
+        function renderMessage(message) {
+            const container = document.getElementById('chatMessages');
+            
+            const msgEl = document.createElement('div');
+            msgEl.className = `message ${message.type}`;
+            
+            if (message.type === 'system') {
+                msgEl.innerHTML = `<div class="message-text">${message.text}</div>`;
+            } else {
+                const time = new Date(message.timestamp).toLocaleTimeString();
+                msgEl.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-sender" style="background: ${message.fromColor}">${message.from}</span>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="message-text">${escapeHtml(message.text)}</div>
+                `;
+            }
+            
+            container.appendChild(msgEl);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addSystemMessage(text) {
+            const message = {
+                id: `m_${Date.now()}`,
+                text,
+                timestamp: Date.now(),
+                type: 'system'
+            };
+            state.messages.push(message);
+            renderMessage(message);
+        }
+
+        function handleBotCommand(command) {
+            const parts = command.split(' ');
+            const cmd = parts[0].toLowerCase();
+            
+            let response = '';
+            let action = null;
+            
+            switch(cmd) {
+                case '/help':
+                    response = `Available commands:
+/draw [keyword] - Draw themed shapes
+/fileinfo - List all files
+/clear - Clear chat
+/export [json|png] - Export room
+/help - Show this help`;
+                    break;
+                    
+                case '/draw':
+                    const keyword = parts.slice(1).join(' ') || 'abstract';
+                    response = `🎨 Drawing: ${keyword}...`;
+                    action = () => drawFromKeyword(keyword);
+                    break;
+                    
+                case '/fileinfo':
+                    const fileCount = Object.keys(state.files).length;
+                    if (fileCount === 0) {
+                        response = '📁 No files uploaded yet';
+                    } else {
+                        let totalSize = 0;
+                        let fileList = '📁 Files in this room:\n';
+                        Object.values(state.files).forEach(file => {
+                            fileList += `• ${file.name} - ${formatBytes(file.size)}\n`;
+                            totalSize += file.size;
+                        });
+                        fileList += `Total: ${fileCount} files, ${formatBytes(totalSize)}`;
+                        response = fileList;
+                    }
+                    break;
+                    
+                case '/clear':
+                    if (confirm('Clear your chat history?')) {
+                        document.getElementById('chatMessages').innerHTML = '';
+                        state.messages = [];
+                        response = 'Chat cleared (local only)';
+                    }
+                    break;
+                    
+                case '/export':
+                    const format = parts[1] || 'json';
+                    if (format === 'json') {
+                        exportRoom();
+                        response = '💾 Exporting as JSON...';
+                    } else if (format === 'png') {
+                        exportCanvasImage();
+                        response = '🖼️ Exporting as PNG...';
+                    }
+                    break;
+                    
+                default:
+                    response = `Unknown command: ${cmd}. Type /help for available commands.`;
+            }
+            
+            const botMessage = {
+                id: `m_bot_${Date.now()}`,
+                from: 'Bot',
+                fromColor: '#9B59B6',
+                text: response,
+                timestamp: Date.now(),
+                type: 'bot'
+            };
+            
+            state.messages.push(botMessage);
+            renderMessage(botMessage);
+            
+            if (action) {
+                setTimeout(action, 500);
+            }
+        }
+
+        function drawFromKeyword(keyword) {
+            const canvas = document.getElementById('canvas');
+            const drawing = document.createElement('div');
+            drawing.className = 'drawing-canvas';
+            drawing.style.left = Math.random() * 500 + 200 + 'px';
+            drawing.style.top = Math.random() * 300 + 100 + 'px';
+            drawing.style.width = '200px';
+            drawing.style.height = '200px';
+            
+            // Create SVG based on keyword
+            let svg = '';
+            const lowerKey = keyword.toLowerCase();
+            
+            if (lowerKey.includes('sun') || lowerKey.includes('circle')) {
+                svg = `<svg width="200" height="200"><circle cx="100" cy="100" r="60" fill="#FFD700"/>
+                       <line x1="100" y1="20" x2="100" y2="40" stroke="#FFD700" stroke-width="4"/>
+                       <line x1="100" y1="160" x2="100" y2="180" stroke="#FFD700" stroke-width="4"/>
+                       <line x1="20" y1="100" x2="40" y2="100" stroke="#FFD700" stroke-width="4"/>
+                       <line x1="160" y1="100" x2="180" y2="100" stroke="#FFD700" stroke-width="4"/></svg>`;
+            } else if (lowerKey.includes('tree')) {
+                svg = `<svg width="200" height="200">
+                       <rect x="85" y="120" width="30" height="80" fill="#8B4513"/>
+                       <polygon points="100,20 40,120 160,120" fill="#228B22"/></svg>`;
+            } else if (lowerKey.includes('house')) {
+                svg = `<svg width="200" height="200">
+                       <polygon points="100,40 40,100 160,100" fill="#DC143C"/>
+                       <rect x="60" y="100" width="80" height="80" fill="#DEB887"/>
+                       <rect x="80" y="130" width="20" height="30" fill="#654321"/></svg>`;
+            } else if (lowerKey.includes('star')) {
+                svg = `<svg width="200" height="200">
+                       <polygon points="100,20 120,80 180,80 130,120 150,180 100,140 50,180 70,120 20,80 80,80" fill="#FFD700"/></svg>`;
+            } else {
+                // Abstract random shapes
+                const shapes = [];
+                for (let i = 0; i < 5; i++) {
+                    const x = Math.random() * 150 + 25;
+                    const y = Math.random() * 150 + 25;
+                    const size = Math.random() * 50 + 20;
+                    const color = NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)];
+                    shapes.push(`<circle cx="${x}" cy="${y}" r="${size}" fill="${color}" opacity="0.7"/>`);
+                }
+                svg = `<svg width="200" height="200">${shapes.join('')}</svg>`;
+            }
+            
+            drawing.innerHTML = svg;
+            canvas.appendChild(drawing);
+            
+            // Make draggable
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+            
+            drawing.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialX = parseInt(drawing.style.left);
+                initialY = parseInt(drawing.style.top);
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = (e.clientX - startX) / state.canvas.scale;
+                const dy = (e.clientY - startY) / state.canvas.scale;
+                drawing.style.left = initialX + dx + 'px';
+                drawing.style.top = initialY + dy + 'px';
+            });
+            
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+        }
+
+        // File handling
+        function uploadFile() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileUpload(event) {
+            const files = event.target.files;
+            for (let file of files) {
+                if (file.size > 10 * 1024 * 1024) {
+                    showToast(`File ${file.name} is too large (max 10MB)`);
+                    continue;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const fileId = `f_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    const fileObj = {
+                        id: fileId,
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        data: e.target.result,
+                        uploadedBy: state.guestId,
+                        uploadedAt: Date.now()
+                    };
+                    
+                    state.files[fileId] = fileObj;
+                    renderFile(fileObj);
+                    saveRoom();
+                    broadcast({ type: 'fileUpload', file: fileObj });
+                    showToast(`Uploaded: ${file.name}`);
+                };
+                reader.readAsDataURL(file);
+            }
+            event.target.value = '';
+        }
+
+        function renderFile(file) {
+            const grid = document.getElementById('filesGrid');
+            
+            const fileEl = document.createElement('div');
+            fileEl.className = 'file-item';
+            fileEl.draggable = true;
+            
+            let thumbnail = '📄';
+            if (file.type.startsWith('image/')) {
+                thumbnail = `<img src="${file.data}" alt="${file.name}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            } else if (file.type.includes('pdf')) {
+                thumbnail = '📕';
+            } else if (file.type.startsWith('audio/')) {
+                thumbnail = '🎵';
+            } else if (file.type.startsWith('video/')) {
+                thumbnail = '🎬';
+            }
+            
+            fileEl.innerHTML = `
+                <div class="file-thumbnail">${thumbnail}</div>
+                <div class="file-info">
+                    <div class="file-name" title="${file.name}">${file.name}</div>
+                    <div class="file-size">${formatBytes(file.size)}</div>
+                </div>
+            `;
+            
+            // Drag to canvas
+            fileEl.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('fileId', file.id);
+            });
+            
+            // Click to preview
+            fileEl.addEventListener('click', () => {
+                previewFile(file);
+            });
+            
+            grid.appendChild(fileEl);
+        }
+
+        function previewFile(file) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            
+            let content = '';
+            if (file.type.startsWith('image/')) {
+                content = `<img src="${file.data}" style="max-width: 100%; max-height: 70vh;">`;
+            } else if (file.type.startsWith('video/')) {
+                content = `<video src="${file.data}" controls style="max-width: 100%; max-height: 70vh;"></video>`;
+            } else if (file.type.startsWith('audio/')) {
+                content = `<audio src="${file.data}" controls></audio>`;
+            } else if (file.type.includes('pdf')) {
+                content = `<embed src="${file.data}" type="application/pdf" width="100%" height="600px">`;
+            } else {
+                content = `<p>Preview not available for this file type.</p>`;
+            }
+            
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>${file.name}</h2>
+                        <p>${formatBytes(file.size)} • ${new Date(file.uploadedAt).toLocaleString()}</p>
+                    </div>
+                    ${content}
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" onclick="downloadFile('${file.id}')">Download</button>
+                        <button class="btn" onclick="this.closest('.modal').remove()">Close</button>
+                    </div>
+                </div>
+            `;
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+            
+            document.body.appendChild(modal);
+        }
+
+        function downloadFile(fileId) {
+            const file = state.files[fileId];
+            if (!file) return;
+            
+            const a = document.createElement('a');
+            a.href = file.data;
+            a.download = file.name;
+            a.click();
+        }
+
+        // Canvas drop zone
+        document.getElementById('canvas').addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        document.getElementById('canvas').addEventListener('drop', (e) => {
+            e.preventDefault();
+            const fileId = e.dataTransfer.getData('fileId');
+            if (fileId) {
+                const file = state.files[fileId];
+                if (file && file.type.startsWith('image/')) {
+                    const rect = e.target.getBoundingClientRect();
+                    createCanvasObject(file, e.clientX - rect.left, e.clientY - rect.top);
+                }
+            }
+        });
+
+        function createCanvasObject(file, x, y) {
+            const objId = `co_${Date.now()}`;
+            const obj = {
+                id: objId,
+                fileId: file.id,
+                position: { x, y },
+                size: { width: 250, height: 200 }
+            };
+            
+            state.canvasObjects[objId] = obj;
+            renderCanvasObject(obj);
+            saveRoom();
+            broadcast({ type: 'canvasObjectCreate', obj, file });
+        }
+
+        function renderCanvasObject(obj) {
+            const file = state.files[obj.fileId];
+            if (!file) return;
+            
+            const canvas = document.getElementById('canvas');
+            const objEl = document.createElement('div');
+            objEl.className = 'canvas-object';
+            objEl.style.left = obj.position.x + 'px';
+            objEl.style.top = obj.position.y + 'px';
+            objEl.style.width = obj.size.width + 'px';
+            objEl.style.height = obj.size.height + 'px';
+            
+            if (file.type.startsWith('image/')) {
+                objEl.innerHTML = `<img src="${file.data}" alt="${file.name}">`;
+            }
+            
+            // Make draggable
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+            
+            objEl.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialX = obj.position.x;
+                initialY = obj.position.y;
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = (e.clientX - startX) / state.canvas.scale;
+                const dy = (e.clientY - startY) / state.canvas.scale;
+                obj.position.x = initialX + dx;
+                obj.position.y = initialY + dy;
+                objEl.style.left = obj.position.x + 'px';
+                objEl.style.top = obj.position.y + 'px';
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    saveRoom();
+                }
+            });
+            
+            canvas.appendChild(objEl);
+        }
+
+        function createDrawing() {
+            showToast('Drawing feature coming soon!');
+        }
+
+        // Voice call simulation
+        function joinCall() {
+            if (state.inCall) return;
+            
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    state.inCall = true;
+                    state.audioStream = stream;
+                    
+                    document.getElementById('voiceBar').classList.remove('hidden');
+                    document.getElementById('joinCallBtn').classList.add('active');
+                    document.getElementById('joinCallBtn').textContent = '📞 In Call';
+                    
+                    // Simulate mic level
+                    const audioContext = new AudioContext();
+                    const analyser = audioContext.createAnalyser();
+                    const microphone = audioContext.createMediaStreamSource(stream);
+                    microphone.connect(analyser);
+                    
+                    analyser.fftSize = 256;
+                    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                    
+                    function updateMeter() {
+                        if (!state.inCall) return;
+                        
+                        analyser.getByteFrequencyData(dataArray);
+                        const bars = document.querySelectorAll('.mic-bar');
+                        
+                        bars.forEach((bar, i) => {
+                            const value = dataArray[i * 4] || 0;
+                            bar.style.height = (value / 255 * 20) + 'px';
+                            bar.classList.toggle('active', value > 50 && !state.muted);
+                        });
+                        
+                        requestAnimationFrame(updateMeter);
+                    }
+                    updateMeter();
+                    
+                    addSystemMessage('Voice call started');
+                    broadcast({ type: 'voiceJoin', guest: state.guestName });
+                })
+                .catch(err => {
+                    showToast('Microphone access denied');
+                    console.error(err);
+                });
+        }
+
+        function toggleMute() {
+            state.muted = !state.muted;
+            const btn = document.getElementById('muteBtn');
+            btn.textContent = state.muted ? '🔇 Unmute' : '🎤 Mute';
+            
+            if (state.audioStream) {
+                state.audioStream.getAudioTracks().forEach(track => {
+                    track.enabled = !state.muted;
+                });
+            }
+        }
+
+        function leaveCall() {
+            if (!state.inCall) return;
+            
+            if (state.audioStream) {
+                state.audioStream.getTracks().forEach(track => track.stop());
+            }
+            
+            state.inCall = false;
+            state.muted = false;
+            
+            document.getElementById('voiceBar').classList.add('hidden');
+            document.getElementById('joinCallBtn').classList.remove('active');
+            document.getElementById('joinCallBtn').textContent = '📞 Join Call';
+            
+            addSystemMessage('Voice call ended');
+            broadcast({ type: 'voiceLeave', guest: state.guestName });
+        }
+
+        // Export/Import
+        function exportRoom() {
+            const data = {
+                version: '1.0',
+                exported: Date.now(),
+                room: {
+                    roomId: state.roomId,
+                    roomName: state.roomName,
+                    notes: state.notes,
+                    files: state.files,
+                    canvasObjects: state.canvasObjects,
+                    messages: state.messages
+                }
+            };
+            
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `room-${state.roomName}-${Date.now()}.json`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            showToast('Room exported!');
+        }
+
+        function importRoom() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if (!data.version || !data.room) {
+                            throw new Error('Invalid file format');
+                        }
+                        
+                        if (confirm('Import this room? Current room will be replaced.')) {
+                            Object.assign(state, data.room);
+                            renderAll();
+                            showToast('Room imported!');
+                        }
+                    } catch (err) {
+                        showToast('Error importing file');
+                        console.error(err);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+
+        function exportCanvasImage() {
+            showToast('Canvas export feature coming soon!');
+        }
+
+        function shareRoom() {
+            const url = `${window.location.origin}${window.location.pathname}#room=${state.roomId}`;
+            
+            // Try to copy to clipboard
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url)
+                    .then(() => showToast('Link copied to clipboard!'))
+                    .catch(() => {
+                        prompt('Share this link:', url);
+                    });
+            } else {
+                prompt('Share this link:', url);
+            }
+        }
+
+        function loadFromShareLink(encoded) {
+            try {
+                const decompressed = LZString.decompressFromEncodedURIComponent(encoded);
+                const data = JSON.parse(decompressed);
+                
+                Object.assign(state, data.room);
+                document.getElementById('landingPage').classList.add('hidden');
+                document.getElementById('workspace').classList.remove('hidden');
+                
+                setupCanvas();
+                renderAll();
+                showToast('Room loaded from link!');
+            } catch (err) {
+                console.error('Error loading from share link:', err);
+                alert('Invalid share link');
+            }
+        }
+
+        function renderAll() {
+            const canvas = document.getElementById('canvas');
+            canvas.innerHTML = '';
+            
+            document.getElementById('roomName').textContent = state.roomName;
+            
+            Object.values(state.notes).forEach(note => renderNote(note));
+            Object.values(state.canvasObjects).forEach(obj => renderCanvasObject(obj));
+            
+            const filesGrid = document.getElementById('filesGrid');
+            filesGrid.innerHTML = '';
+            Object.values(state.files).forEach(file => renderFile(file));
+            
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
+            state.messages.forEach(msg => renderMessage(msg));
+        }
+
+        function saveRoom() {
+            if (!state.roomId) return;
+            
+            const data = {
+                roomId: state.roomId,
+                roomName: state.roomName,
+                notes: state.notes,
+                files: state.files,
+                canvasObjects: state.canvasObjects,
+                messages: state.messages
+            };
+            
+            localStorage.setItem(`room_${state.roomId}`, JSON.stringify(data));
+        }
+
+        function broadcast(data) {
+            if (state.broadcastChannel) {
+                state.broadcastChannel.postMessage({
+                    ...data,
+                    roomId: state.roomId,
+                    guestId: state.guestId,
+                    timestamp: Date.now()
+                });
+            }
+        }
+
+        function handleRemoteUpdate(data) {
+            switch(data.type) {
+                case 'noteCreate':
+                    if (!state.notes[data.note.id]) {
+                        state.notes[data.note.id] = data.note;
+                        renderNote(data.note);
+                    }
+                    break;
+                case 'noteUpdate':
+                    if (state.notes[data.note.id]) {
+                        state.notes[data.note.id] = data.note;
+                        const el = document.getElementById(data.note.id);
+                        if (el) {
+                            el.style.left = data.note.position.x + 'px';
+                            el.style.top = data.note.position.y + 'px';
+                            el.style.width = data.note.size.width + 'px';
+                            el.style.height = data.note.size.height + 'px';
+                            el.style.backgroundColor = data.note.color;
+                        }
+                    }
+                    break;
+                case 'noteDelete':
+                    if (state.notes[data.noteId]) {
+                        const el = document.getElementById(data.noteId);
+                        if (el) el.remove();
+                        delete state.notes[data.noteId];
+                    }
+                    break;
+                case 'message':
+                    state.messages.push(data.message);
+                    renderMessage(data.message);
+                    break;
+                case 'fileUpload':
+                    if (!state.files[data.file.id]) {
+                        state.files[data.file.id] = data.file;
+                        renderFile(data.file);
+                    }
+                    break;
+                case 'join':
+                    addSystemMessage(`${data.guest.name} joined the room`);
+                    break;
+            }
+        }
+
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.sidebar-tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('chatTab').classList.toggle('hidden', tab !== 'chat');
+            document.getElementById('filesTab').classList.toggle('hidden', tab !== 'files');
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize on load
+        init();
+    </script>
+
+
+</body></html>
